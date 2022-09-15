@@ -701,8 +701,13 @@ copy_files() {
         error_msg "mount ${loop_new}p2 failed!"
     fi
 
+    btrfs subvolume create ${rootfs}/etc >/dev/null
+
     cp -rf ${boot}/* ${bootfs}
     cp -rf ${root}/* ${rootfs}
+
+    mkdir -p ${rootfs}/.snapshots
+    btrfs subvolume snapshot -r ${rootfs}/etc ${rootfs}/.snapshots/etc-000 >/dev/null
     sync
 
     cd ${make_path}

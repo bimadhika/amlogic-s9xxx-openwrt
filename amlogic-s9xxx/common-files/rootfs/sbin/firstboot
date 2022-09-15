@@ -1,0 +1,47 @@
+#!/bin/bash
+#========================================================================
+#
+# This file is licensed under the terms of the GNU General Public
+# License version 2. This program is licensed "as is" without any
+# warranty of any kind, whether express or implied.
+#
+# This file is a part of the make OpenWrt for Amlogic s9xxx tv box
+# https://github.com/ophub/amlogic-s9xxx-openwrt
+#
+# Description: Restoring the system initialization state
+# Copyright (C) 2021- https://github.com/ophub/amlogic-s9xxx-openwrt
+#
+# Command: firstboot
+#
+#=======================================================================
+#
+STEPS="[\033[95m STEPS \033[0m]"
+INFO="[\033[94m INFO \033[0m]"
+SUCCESS="[\033[92m SUCCESS \033[0m]"
+OPTIONS="[\033[93m OPTIONS \033[0m]"
+ERROR="[\033[91m ERROR \033[0m]"
+
+# Encountered a serious error, abort the script execution
+error_msg() {
+    echo -e "${ERROR} ${1}"
+    exit 1
+}
+
+# Perform recovery
+do_recovery() {
+    snap_name="/.snapshots/etc-000"
+    if btrfs subvolume list -rt / | grep "${snap_name}" >/dev/null; then
+        btrfs subvolume snapshot ${snap_name} /etc
+        [[ "${?}" -ne "0" ]] && echo -e "${INFO} Recovery successful, restarting..."
+        sync && sleep 3
+        echo 'b' >/proc/sysrq-trigger 2>/dev/null
+    else
+        error_msg "Missing initialization snapshot: [ ${snap_name} ], cannot restore!"
+    fi
+}
+
+echo -e "${STEPS} Welcome to the Recovery Initialization Tool."
+[[ -x "/sbin/firstboot" ]] || error_msg "Please grant execution permission: [ chmod +x /sbin/firstboot ]"
+
+# Perform recovery
+do_recovery
